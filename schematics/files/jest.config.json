@@ -1,0 +1,17 @@
+{
+    "transform": {
+        "^.+\\.tsx?$": "ts-jest",
+        "^.+\\.svg$": "jest-svg-transformer"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(js?|ts?|tsx?)$",
+    "setupTestFrameworkScriptFile": "./node_modules/jest-enzyme/lib/index.js",
+    "moduleFileExtensions": [
+        "ts",
+        "tsx",
+        "js",
+        "jsx",
+        "json",
+        "node"
+    ],
+    "testEnvironment": "node"
+}

@@ -1,0 +1,15 @@
+{
+    "name": "schematic-1",
+    "version": "0.0.1",
+    "description": "Desccc",
+    "main": "index.js",
+    "engines": {
+        "node": ">=10.6.0"
+    },
+    "author": "The Pact",
+    "repository": {
+        "type": "git",
+        "url": "git@gitlab.com:the-pact/starter-kits/frontend-starter-kit.git"
+    },
+    "license": "Check LICENSE file"
+}
