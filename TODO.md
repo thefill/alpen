@@ -1,3 +1,15 @@
+#OVERVIEW
+Alpen is an alternative to nx / bolt / ng
+
+It allows to fetch schematics (example of full schematic package schematic-package-example) and
+set them as subpackages of the monorepo. Then installs all dependencies in common package, 
+and manages scripts, publishing etc via alpenx.
+
+Adventages:
+   - common package versions enforced
+   - common commands across stack
+   - infinite possibilities for schematics (no complex configs)
+
 #ALPEN RULES
    - all packages have consistent version of the dependencies
    - if new packages schematics introduce different version user needs to be warned and asked to resolve
