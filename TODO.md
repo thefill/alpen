@@ -5,6 +5,8 @@ It allows to fetch schematics (example of full schematic package schematic-packa
 set them as subpackages of the monorepo. Then installs all dependencies in common package, 
 and manages scripts, publishing etc via alpenx.
 
+use: https://www.npmjs.com/package/npm-run
+
 Adventages:
    - common package versions enforced
    - common commands across stack
