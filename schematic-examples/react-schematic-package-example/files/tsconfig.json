@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "module": "es2015",
+        "typeRoots": ["node_modules/@types"],
+        "target": "es5",
+        "sourceMap": true,
+        "declaration": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "moduleResolution": "node",
+        "lib": [
+            "dom",
+            "es5",
+            "es6",
+            "es7"
+        ],
+        "jsx": "react",
+        "strictNullChecks": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": [
+        "./{{path}}/src/index.tsx"
+    ],
+    "files": [
+        "./{{path}}/src/assets/images.d.ts"
+    ],
+    "compileOnSave": false
+}

@@ -1,0 +1,8 @@
+{
+    "rootDir": "apps",
+    "packages": {
+        "package-name": {
+            "configHash": "12345"
+        }
+    }
+}

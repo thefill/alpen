@@ -1,7 +1,7 @@
 import {FocusStyleManager} from "@blueprintjs/core";
 import * as React from 'react';
 import {Link, Route} from 'react-router-dom';
-import logo from "./../../assets/logo.svg";
+import logo from "../../assets/logo.svg";
 import {PageAModule} from '../page-a';
 import {PageBModule} from '../page-b';
 import './app.module.scss';

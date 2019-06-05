@@ -1,0 +1,15 @@
+{
+    "name": "react-schematic-package-example",
+    "version": "0.0.1",
+    "description": "Desccc",
+    "main": "index.js",
+    "engines": {
+        "node": ">=10.6.0"
+    },
+    "author": "The Pact",
+    "repository": {
+        "type": "git",
+        "url": "xxx"
+    },
+    "license": "Check LICENSE file"
+}

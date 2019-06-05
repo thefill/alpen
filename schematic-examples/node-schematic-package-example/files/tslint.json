@@ -6,6 +6,9 @@
     "linterOptions": {
         "exclude": [
             "node_modules/**/*.ts"
+        ],
+        "include": [
+            "{{path}}/**/*.ts"
         ]
     },
     "rules": {

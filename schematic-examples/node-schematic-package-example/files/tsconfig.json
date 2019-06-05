@@ -14,15 +14,14 @@
             "es6",
             "es7"
         ],
-        "jsx": "react",
         "strictNullChecks": true,
         "noFallthroughCasesInSwitch": true
     },
     "include": [
-        "./src/index.tsx"
+        "./{{path}}/src/index.tsx"
     ],
     "files": [
-        "./src/assets/images.d.ts"
+        "./{{path}}/src/assets/images.d.ts"
     ],
     "compileOnSave": false
 }

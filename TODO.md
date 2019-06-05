@@ -3,9 +3,10 @@ Alpen is an alternative to nx / bolt / ng
 
 It allows to fetch schematics (example of full schematic package schematic-package-example) and
 set them as subpackages of the monorepo. Then installs all dependencies in common package, 
-and manages scripts, publishing etc via alpenx.
+and manages scripts, publishing etc via alpen.
 
 use: https://www.npmjs.com/package/npm-run
+use cli from: https://www.twilio.com/blog/how-to-build-a-cli-with-node-js
 
 Adventages:
    - common package versions enforced
@@ -18,7 +19,7 @@ Adventages:
    - local versions of packages cross link each other
    
 #FUNCTIONALITY
-   - user can call following npm actions in the initialised workspace
+   - user can call following npm actions in the initialised workspace ?????? do we need this????
     
     npm run add -- @alpen/schematicName@x.x.x packageName
     npm run remove -- packageName
@@ -34,35 +35,35 @@ Adventages:
     
    - user can call following cli actions
     
-    alpenx add @alpen/schematicName@x.x.x packageName
-    alpenx remove packageName
-    alpenx serve packageName
-    alpenx build packageName
-    alpenx lint packageName
-    alpenx test packageName
-    alpenx test:watch packageName
-    alpenx docs packageName
-    alpenx clean packageName
-    alpenx run packageName
-    alpenx publish packageName
+    alpen add @alpen/schematicName@x.x.x packageName
+    alpen remove packageName
+    alpen serve packageName
+    alpen build packageName
+    alpen lint packageName
+    alpen test packageName
+    alpen test:watch packageName
+    alpen docs packageName
+    alpen clean packageName
+    alpen run packageName
+    alpen publish packageName
     // Extra command:
-    alpenx init workspaceName
+    alpen init workspaceName
 
 #HOW IT WORKS
-When user executes 'alpenx add @alpen/schematicName@x.x.x packageName':
+When user executes 'alpen add @alpen/schematicName@x.x.x packageName':
    - npm installs this dependency as dev dependency
    - copies the content of 'files dir' to the './packages/packageName' dir
    - asks user for: {{name}}, {{version}}, {{description}}, {{author}}, {{repository}}
-   - we use this values and use sed to replace markers in all file content also replace {{path}} with path to package
-   - moves content of 'files/package.json' to the state.json5
+   - we use this values and use sed to replace markers in all file content also replace {{path}} & {escaped-path}} with path to package
+   - sets hash of alpen.package.json in .alpenrc
    - checks if all dependencies of the moved package.json dont collide with existing version in ./package.json
    - if collide warn user, append dependencies (even duplicates) and terminate (user needs to resolve manually and type npm install)
    - else we install all dependencies
    
-When user executes 'alpenx command ...'
-    - when command add / remove / publish / install we act on it:
+When user executes 'alpen command ...'
+    - when command add / remove we act on it:
        - for add above,
        - for remove remove packages/packageName and all its dependencies, then npm install
-       - for publish we assume project was built, we do temporally move package.json from state.json and execute npm publish
-       - for install we just do npm install on root
-    - when other command we do npm run eval-string from state.json5
+    - when other command 
+       - we check if alpen.package.json changed via hash if so we update via nps scripts
+       - we use generated package-scripts.js via nps to execute commands

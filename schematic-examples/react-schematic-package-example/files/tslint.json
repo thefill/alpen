@@ -1,0 +1,25 @@
+{
+    "extends": [
+        "tslint:recommended",
+        "@blueprintjs/tslint-config"
+    ],
+    "linterOptions": {
+        "exclude": [
+            "node_modules/**/*.ts"
+        ],
+        "include": [
+            "{{path}}/**/*.ts"
+        ]
+    },
+    "rules": {
+        "trailing-comma": false,
+        "quotemark": false,
+        "no-trailing-whitespace": false,
+        "object-literal-sort-keys": false,
+        "ordered-imports": false,
+        "prettier": false,
+        "object-literal-shorthand": false,
+        "one-line": false,
+        "no-default-export": false
+    }
+}

@@ -1,22 +1,20 @@
 {
-    "name": "schematic-1",
-    "version": "0.0.1",
-    "description": "Desccc",
-    "main": "dist/index.js",
-    "module": "dist/index.js",
-    "typings": "dist/index.d.ts",
+    "name": "{{name}}",
+    "version": "{{version}}",
+    "description": "{{description}}",
+    "main": "{{path}}/dist/index.js",
+    "module": "{{path}}/dist/index.js",
+    "typings": "{{path}}/dist/index.d.ts",
     "scripts": {
-        "// DEV SCRIPTS //": "-------------------------------------------------------",
-        "start": "parcel src/index.html",
-        "build": "parcel build src/index.html",
-        "// CODE QUALITY SCRIPTS //": "----------------------------------------------",
-        "lint": "tslint -c tslint.json src/*.ts",
-        "test": "jest --config jest.config.json",
-        "test:watch": "jest --config jest.config.json --watch",
-        "test:coverage": "jest --config jest.config.json --coverage",
-        "// UTILS SCRIPTS //": "-----------------------------------------------------",
-        "docs": "typedoc --mode modules --exclude \"**/*+(index|.spec|.e2e).ts\" --tsconfig tsconfig.json --hideGenerator --readme README.md --out docs src",
-        "clean": "rimraf dist && rimraf docs && rimraf coverage",
+        "start": "parcel {{path}}/src/index.html",
+        "build": "parcel build {{path}}/src/index.html",
+        "lint": "tslint -c tslint.json {{path}}/src/*.ts",
+        "test": "jest --config {{path}}/jest.config.json",
+        "publish": "echo 'Publishing' && exit 0",
+        "test:watch": "jest --config {{path}}/jest.config.json --watch",
+        "test:coverage": "jest --config {{path}}/jest.config.json --coverage",
+        "docs": "typedoc --mode modules --exclude \"{{path}}/**/*+(index|.spec|.e2e).ts\" --tsconfig {{path}}/tsconfig.json --hideGenerator --readme {{path}}/README.md --out {{path}}/docs {{path}}/src",
+        "clean": "rimraf {{path}}/dist && rimraf {{path}}/docs && rimraf {{path}}/coverage",
         "precommit": "run-s lint test build clean",
         "prepush": "run-s lint test"
     },
@@ -63,10 +61,10 @@
     "engines": {
         "node": ">=10.6.0"
     },
-    "author": "The Pact",
+    "author": "{{author}}",
     "repository": {
         "type": "git",
-        "url": "git@gitlab.com:the-pact/starter-kits/frontend-starter-kit.git"
+        "url": "{{repository}}"
     },
     "license": "Check LICENSE file"
 }
