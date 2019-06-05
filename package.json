@@ -6,16 +6,16 @@
     "module": "dist/index.js",
     "typings": "dist/index.d.ts",
     "scripts": {
-        "add": "alpenx add @alpen/schematicName@x.x.x packageName",
-        "remove": "alpenx remove packageName",
-        "serve": "alpenx serve packageName",
-        "build": "alpenx build packageName",
-        "lint": "alpenx lint packageName",
-        "test": "alpenx test packageName",
-        "test:watch": "alpenx test:watch packageName",
-        "docs": "alpenx docs packageName",
-        "clean": "alpenx clean packageName",
-        "run": "alpenx run packageName"
+        "add": "alpen add @alpen/schematicName@x.x.x packageName",
+        "remove": "alpen remove packageName",
+        "serve": "alpen serve packageName",
+        "build": "alpen build packageName",
+        "lint": "alpen lint packageName",
+        "test": "alpen test packageName",
+        "test:watch": "alpen test:watch packageName",
+        "docs": "alpen docs packageName",
+        "clean": "alpen clean packageName",
+        "run": "alpen run packageName"
     },
     "dependencies": {
         "nps": "5.9.5",

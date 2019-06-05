@@ -5,7 +5,7 @@ It allows to fetch schematics (example of full schematic package schematic-packa
 set them as subpackages of the monorepo. Then installs all dependencies in common package, 
 and manages scripts, publishing etc via alpen.
 
-use: https://www.npmjs.com/package/npm-run
+use code from: https://github.com/kentcdodds/nps/blob/master/src/index.js and whole nps!
 use cli from: https://www.twilio.com/blog/how-to-build-a-cli-with-node-js
 
 Adventages:
@@ -65,5 +65,10 @@ When user executes 'alpen command ...'
        - for add above,
        - for remove remove packages/packageName and all its dependencies, then npm install
     - when other command 
-       - we check if alpen.package.json changed via hash if so we update via nps scripts
-       - we use generated package-scripts.js via nps to execute commands
+       - we check if alpen.package.json changed via hash if so we update
+           - .alpenrc package hash
+           - .alpenrc package scripts
+           - .alpenrc dependencies
+       - we install deps via npm
+       - we udpate other package deps
+       - we execute script
