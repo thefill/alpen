@@ -58,6 +58,7 @@
         "@types/ncp": "2.0.1",
         "@types/listr": "0.14.0",
         "@types/inquirer": "6.0.3",
+        "@types/md5-file": "4.0.0",
         "replace": "1.1.0",
         "commander": "2.20.0",
         "chalk": "2.4.2",
@@ -66,7 +67,8 @@
         "inquirer": "6.3.1",
         "listr": "0.14.3",
         "ncp": "2.0.0",
-        "pkg-install": "1.0.0"
+        "pkg-install": "1.0.0",
+        "md5-file": "4.0.0"
     },
     "devDependencies": {
         "@types/jest": "24.0.13",

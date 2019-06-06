@@ -3,7 +3,9 @@
     "packageManager": "npm",
     "packages": {
         "package-name": {
-            "configHash": "12345"
+            "configHash": "12345",
+            "packageDir": "someDir",
+            "publish": true
         }
     }
 }

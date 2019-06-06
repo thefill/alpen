@@ -6,6 +6,20 @@ export class QuestionController {
         // TODO: implement
         return [];
     }
+
+    // Questions - init
+    // whats the workspace name
+    // whats your preferred package manager (npm | yarn | pnpm)
+    // whats your packages root dir
+
+    // Questions - add
+    // whats the package name
+    // whats the package template name (npm package name)
+    // whats your package dir (you can provide nested dir e.g. /some/dir/) relative to workspace root dir
+    // is this package publishable?
+
+    // Questions - remove
+    // are you sure? Will remove files...
 }
 
 // const defaultTemplate = 'javascript';
