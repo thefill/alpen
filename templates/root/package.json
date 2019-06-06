@@ -1,5 +1,5 @@
 {
-    "name": "node-schematic-package-example",
+    "name": "@alpen/root-template-example",
     "version": "0.0.1",
     "description": "Desccc",
     "main": "index.js",

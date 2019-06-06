@@ -1,0 +1,32 @@
+{
+    "name": "{{name}}",
+    "version": "{{version}}",
+    "description": "{{description}}",
+    "main": "index.js",
+    "scripts": {
+        "add": "alpen run add",
+        "remove": "alpen run remove",
+        "serve": "alpen run serve",
+        "build": "alpen run build",
+        "lint": "alpen run lint",
+        "test": "alpen run test",
+        "test:watch": "alpen run test:watch",
+        "docs": "alpen run docs",
+        "clean": "alpen run clean",
+        "run": "alpen run",
+        "publish": "npm run publish"
+    },
+    "dependencies": {
+        "alpen": "0.0.1"
+    },
+    "devDependencies": {},
+    "engines": {
+        "node": ">=10.6.0"
+    },
+    "author": "{{author}}",
+    "repository": {
+        "type": "git",
+        "url": "{{repository}}"
+    },
+    "license": "Check LICENSE file"
+}

@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+
+// Setup Alpen CLI
+require = require('esm')(module /*, options*/);
+const Alpen = require('../dist/cjs/index.js').Alpen;
+const alpen = new Alpen();
+// init Alpen CLI
+alpen.cli(process.argv);

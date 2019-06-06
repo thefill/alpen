@@ -1,0 +1,38 @@
+{
+    "transform": {
+        "^.+\\.ts$": "ts-jest"
+    },
+    "testRegex": "/src/.+\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+        "/node_modules/",
+        "/examples/",
+        "/templates/"
+    ],
+    "moduleFileExtensions": [
+        "ts",
+        "tsx",
+        "js",
+        "jsx",
+        "json",
+        "node"
+    ],
+    "testEnvironment": "node",
+    "coverageDirectory": "reports/coverage",
+    "coverageThreshold": {
+        "global": {
+            "branches": 100,
+            "functions": 100,
+            "lines": 100,
+            "statements": 100
+        }
+    },
+    "reporters": [
+        "default",
+        [
+            "jest-junit",
+            {
+                "outputDirectory": "reports/junit/"
+            }
+        ]
+    ]
+}

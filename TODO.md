@@ -1,7 +1,7 @@
 #OVERVIEW
 Alpen is an alternative to nx / bolt / ng
 
-It allows to fetch schematics (example of full schematic package schematic-package-example) and
+It allows to fetch schematics (example of full schematic package schematic-examples) and
 set them as subpackages of the monorepo. Then installs all dependencies in common package, 
 and manages scripts, publishing etc via alpen.
 
@@ -21,7 +21,7 @@ Adventages:
 #FUNCTIONALITY
    - user can call following npm actions in the initialised workspace ?????? do we need this????
     
-    npm run add -- @alpen/schematicName@x.x.x packageName
+    npm run add -- @alpen/templateName@x.x.x packageName
     npm run remove -- packageName
     npm run serve -- packageName
     npm run build -- packageName
@@ -35,7 +35,7 @@ Adventages:
     
    - user can call following cli actions
     
-    alpen add @alpen/schematicName@x.x.x packageName
+    alpen add @alpen/templateName@x.x.x packageName
     alpen remove packageName
     alpen serve packageName
     alpen build packageName
@@ -50,7 +50,7 @@ Adventages:
     alpen init workspaceName
 
 #HOW IT WORKS
-When user executes 'alpen add @alpen/schematicName@x.x.x packageName':
+When user executes 'alpen add @alpen/templateName@x.x.x packageName':
    - npm installs this dependency as dev dependency
    - copies the content of 'files dir' to the './packages/packageName' dir
    - asks user for: {{name}}, {{version}}, {{description}}, {{author}}, {{repository}}
