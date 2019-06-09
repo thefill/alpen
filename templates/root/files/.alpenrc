@@ -1,11 +1,10 @@
 {
-    "rootDir": "apps",
-    "packageManager": "npm",
+    "rootDir": "{{root-dir}}",
+    "packageManager": "{{package-manager}}",
     "packages": {
         "package-name": {
             "configHash": "12345",
-            "packageDir": "someDir",
-            "publish": true
+            "packageDir": "someDir"
         }
     }
 }

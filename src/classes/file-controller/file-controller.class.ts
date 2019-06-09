@@ -1,5 +1,7 @@
+import * as findUp from 'find-up';
 import fs, {MakeDirectoryOptions, PathLike, WriteFileOptions} from 'fs';
 import {md5FileAsPromised as md5File} from 'md5-file/promise';
+import mkdirp from 'mkdirp';
 import {ncp, Options} from 'ncp';
 import replace from 'replace';
 import {promisify} from 'util';
@@ -7,9 +9,9 @@ import {promisify} from 'util';
 export class FileController {
     protected accessHandler: (path: PathLike, mode?: number) => Promise<void>;
     protected writeHandler: (path: PathLike | number, data: any, options?: WriteFileOptions) => Promise<void>;
-    protected mkdirHandler: (path: PathLike, options?: number | string | MakeDirectoryOptions) => Promise<void>;
     protected copyHandler: (source: string, destination: string, options?: Options) => Promise<void>;
     protected readHandler: (path: PathLike | number, options?: { encoding?: null; flag?: string; }) => Promise<Buffer>;
+    protected findClosestHandler: (...args: any) => Promise<string | undefined>;
     protected replaceHandler: (options: {
         regex: string,
         replacement: string,
@@ -18,15 +20,17 @@ export class FileController {
         silent?: boolean,
     }) => Promise<void>;
     protected hashHandler: md5File;
+    protected mkdirHandler: (path: PathLike, options?: number | string | MakeDirectoryOptions) => Promise<void>;
 
     constructor() {
         this.accessHandler = promisify(fs.access);
         this.writeHandler = promisify(fs.writeFile);
         this.readHandler = promisify(fs.readFile);
-        this.mkdirHandler = promisify(fs.mkdir);
         this.copyHandler = promisify(ncp);
         this.replaceHandler = promisify(replace);
         this.hashHandler = md5File;
+        this.findClosestHandler = findUp.default;
+        this.mkdirHandler = promisify(mkdirp);
     }
 
     public async copy(from: string, to: string): Promise<void> {
@@ -63,6 +67,10 @@ export class FileController {
         } catch (error) {
             return Promise.reject(new Error(`Current user has no access rights to path ${path}`));
         }
+    }
+
+    public async findClosestUp(path: string | string[]): Promise<string | undefined> {
+        return await this.findClosestHandler(path);
     }
 
     public async replace(paths: string[], pattern: string, replacement: string) {

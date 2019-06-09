@@ -8,5 +8,8 @@ export enum Placeholder {
     PACKAGE_REPOSITORY = '{{repository}',
     PACKAGE_NAME = '{{name}}',
     PACKAGE_PATH = '{{path}}',
-    ALPEN_VERSION = '{{alpen-version}}'
+    ALPEN_VERSION = '{{alpen-version}}',
+    ROOT_DIR = '{{root-dir}}',
+    PACKAGE_MANAGER = '{{package-manager}}',
+    NODE_VERSION = '{{node-version}}'
 }

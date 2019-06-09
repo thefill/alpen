@@ -1,147 +1,184 @@
-import {ListrTask} from 'listr';
+import chalk from 'chalk';
+import execa from 'execa';
+import Listr, {ListrOptions, ListrTask} from 'listr';
+import {CommandType} from '../../enums/command-type';
+import {IConfig} from '../../interfaces';
 import {FileController} from '../file-controller';
 
 export class TaskController {
-
     protected fileController: FileController;
 
-    constructor(fileController: FileController) {
+    protected queueOptions: ListrOptions = {
+        concurrent: false,
+        exitOnError: false
+        // TODO: Explore extra render features listed below
+        // showSubtasks: true,
+        // collapse: false,
+        // clearOutput: false
+    };
+
+    constructor(fileController: FileController, queueOptions?: ListrOptions) {
+        Object.assign(this.queueOptions, queueOptions);
         this.fileController = fileController;
     }
 
-    public get(options: { [key: string]: any }): ListrTask[] {
+    public async processTasks(tasks: ListrTask[]): Promise<void> {
+        const queue = new Listr(tasks, this.queueOptions);
+        await queue.run();
+
+        // tslint:disable-next-line
+        console.log('%s Processing result:', chalk.green.bold('DONE'));
+    }
+
+    public getTasks(config: IConfig): ListrTask[] {
         // TODO: implement
-        return [];
+        let tasks;
+
+        switch (config.command.type) {
+            case CommandType.INIT:
+                tasks = [
+                    {
+                        title: 'Execa test 1',
+                        task: async () => {
+                            const {stdout} = await execa('npm', ['--help']);
+                            // tslint:disable-next-line
+                            console.log(stdout);
+                        }
+                    },
+                    // check if dir dont exist
+                    {
+                        title: 'Validate path',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // copy templates/root dir
+                    {
+                        title: 'Copy template',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // replace placeholders
+                    {
+                        title: 'Populate placeholders',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // install dependencies
+                    {
+                        title: 'Install dependencies',
+                        task: () => Promise.resolve('Foo')
+                    }
+                ];
+                break;
+            case CommandType.ADD:
+                // for add:
+                tasks = [
+                    // check if dir dont exist
+                    {
+                        title: 'Validate path',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - use package manager to install template as dev dep.
+                    // - copy template 'file' dir content to specified package location
+                    {
+                        title: 'Retrieve template',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // replace placeholders
+                    // - replace in whole dir placeholders
+                    {
+                        title: 'Populate placeholders',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - keep hash of alpen.package.json
+                    // - keep package name, dir and if publishable
+                    {
+                        title: 'Update workspace config',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - get package dependencies and compare with existing (warn if conflict)
+                    // - get package dev dependencies and compare with existing (warn if conflict)
+                    {
+                        title: 'Resolve dependencies',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // install dependencies
+                    // - install dependencies and save
+                    {
+                        title: 'Install dependencies',
+                        task: () => Promise.resolve('Foo')
+                    }
+                ];
+                break;
+            case CommandType.REMOVE:
+                // TODO: implement later: we need to keep track of dependencies per package
+                // for remove:
+                tasks = [
+                    // - get package dependencies and compare with existing (remove one that are not used by other)
+                    // - get package dev dependencies and compare with existing (remove one that are not used by other)
+                    {
+                        title: 'Resolve dependencies',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - uninstall removable packages
+                    {
+                        title: 'Uninstall unused dependencies',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - remove files
+                    {
+                        title: 'Remove package files',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - remove entry from config
+                    {
+                        title: 'Update workspace config',
+                        task: () => Promise.resolve('Foo')
+                    },
+                ];
+                break;
+            case CommandType.PUBLISH:
+                // for publish:
+                tasks = [
+                    // - copy package config file to package.json
+                    {
+                        title: 'Setup package',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - npm publish
+                    {
+                        title: 'Publish package',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - remove package.json
+                    {
+                        title: 'Cleanup package',
+                        task: () => Promise.resolve('Foo')
+                    }
+                ];
+                break;
+            case CommandType.TEST:
+                break;
+            case CommandType.BUILD:
+                break;
+            case CommandType.SERVE:
+                break;
+            case CommandType.RUN:
+                // for other commands:
+                tasks = [
+                    // - if package have definition proceed
+                    {
+                        title: 'Retrieve package config',
+                        task: () => Promise.resolve('Foo')
+                    },
+                    // - execute script with npm
+                    {
+                        title: 'Execute script',
+                        task: () => Promise.resolve('Foo')
+                    },
+                ];
+                break;
+            default:
+                throw new Error('Unknown command');
+        }
+
+        return tasks;
     }
 }
-
-// for add:
-// - use package manager to install template as dev dep.
-// - copy template 'file' dir content to specified package location
-// - replace in whole dir placeholders
-// - keep hash of alpen.package.json
-// - keep package name, dir and if publishable
-// - get package dependencies and compare with existing (warn if conflict)
-// - get package dev dependencies and compare with existing (warn if conflict)
-// - install dependencies and save
-// for remove:
-// - get package dependencies and compare with existing (remove one that are not used by other)
-// - get package dev dependencies and compare with existing (remove one that are not used by other)
-// - uninstall removable packages
-// - remove files
-// - remove entry from config
-// for publish:
-// - if no package provided ask if publish all?
-// - if publishable proceed
-// - copy package config file to package.json
-// - npm publish
-// - remove package.json
-// for other commands:
-// - if no package name provided execute for all (for serve / test:watch / watch - ask)
-// - if package have definition proceed
-// - execute script with npm
-//
-// async function initGit(options) {
-//     const result = await execa('git', ['init'], {
-//         cwd: options.targetDirectory
-//     });
-//     if (result.failed) {
-//         return Promise.reject(new Error('Failed to initialize git'));
-//     }
-//     return;
-// }
-//
-//
-// [
-//     {
-//         title: 'Copy project files',
-//         task: () => copyTemplateFiles(options)
-//     },
-//     {
-//         title: 'Create gitignore',
-//         task: () => createGitignore(options)
-//     },
-//     {
-//         title: 'Create License',
-//         task: () => createLicense(options)
-//     },
-//     {
-//         title: 'Initialize git',
-//         task: () => initGit(options),
-//         enabled: () => options.git
-//     },
-//     {
-//         title: 'Install dependencies',
-//         task: () =>
-//             projectInstall({
-//                 cwd: options.targetDirectory
-//             }),
-//         skip: () =>
-//             !options.runInstall
-//                 ? 'Pass --install to automatically install dependencies'
-//                 : undefined
-//     }
-// ];
-
-// export async function createProject(options) {
-//     options = {
-//         ...options,
-//         targetDirectory: options.targetDirectory || process.cwd(),
-//         email: 'hi@dominik.dev',
-//         name: 'Dominik Kundel'
-//     };
-//
-//     const templateDir = path.resolve(
-//         new URL(import.meta.url).pathname,
-//         '../../templates',
-//         options.template
-//     );
-//     options.templateDirectory = templateDir;
-//
-//     try {
-//         await access(templateDir, fs.constants.R_OK);
-//     } catch (err) {
-//         console.error('%s Invalid template name', chalk.red.bold('ERROR'));
-//         process.exit(1);
-//     }
-//
-//     const tasks = new Listr(
-//         [
-//             {
-//                 title: 'Copy project files',
-//                 task: () => copyTemplateFiles(options)
-//             },
-//             {
-//                 title: 'Create gitignore',
-//                 task: () => createGitignore(options)
-//             },
-//             {
-//                 title: 'Create License',
-//                 task: () => createLicense(options)
-//             },
-//             {
-//                 title: 'Initialize git',
-//                 task: () => initGit(options),
-//                 enabled: () => options.git
-//             },
-//             {
-//                 title: 'Install dependencies',
-//                 task: () =>
-//                     projectInstall({
-//                         cwd: options.targetDirectory
-//                     }),
-//                 skip: () =>
-//                     !options.runInstall
-//                         ? 'Pass --install to automatically install dependencies'
-//                         : undefined
-//             }
-//         ],
-//         {
-//             exitOnError: false
-//         }
-//     );
-//
-//     await tasks.run();
-//     console.log('%s Project ready', chalk.green.bold('DONE'));
-//     return true;
-// }

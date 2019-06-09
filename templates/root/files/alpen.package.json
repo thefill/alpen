@@ -22,7 +22,7 @@
     "devDependencies": {
     },
     "engines": {
-        "node": ">=10.6.0"
+        "node": ">={{node-version}}"
     },
     "author": "{{author}}",
     "repository": {
