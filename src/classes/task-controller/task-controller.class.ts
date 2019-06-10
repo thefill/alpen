@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import execa from 'execa';
+import getStream from 'get-stream';
 import Listr, {ListrOptions, ListrTask} from 'listr';
 import {CommandType} from '../../enums/command-type';
 import {IConfig} from '../../interfaces';
@@ -7,10 +8,11 @@ import {FileController} from '../file-controller';
 
 export class TaskController {
     protected fileController: FileController;
+    protected commandOutput: { [commandName: string]: any } = {};
 
     protected queueOptions: ListrOptions = {
         concurrent: false,
-        exitOnError: false
+        exitOnError: true
         // TODO: Explore extra render features listed below
         // showSubtasks: true,
         // collapse: false,
@@ -27,6 +29,9 @@ export class TaskController {
         await queue.run();
 
         // tslint:disable-next-line
+        console.log(this.commandOutput);
+
+        // tslint:disable-next-line
         console.log('%s Processing result:', chalk.green.bold('DONE'));
     }
 
@@ -39,11 +44,7 @@ export class TaskController {
                 tasks = [
                     {
                         title: 'Execa test 1',
-                        task: async () => {
-                            const {stdout} = await execa('npm', ['--help']);
-                            // tslint:disable-next-line
-                            console.log(stdout);
-                        }
+                        task: this.getExecutor('test', config, this.test, this.commandOutput)
                     },
                     // check if dir dont exist
                     {
@@ -131,7 +132,7 @@ export class TaskController {
                     {
                         title: 'Update workspace config',
                         task: () => Promise.resolve('Foo')
-                    },
+                    }
                 ];
                 break;
             case CommandType.PUBLISH:
@@ -172,7 +173,7 @@ export class TaskController {
                     {
                         title: 'Execute script',
                         task: () => Promise.resolve('Foo')
-                    },
+                    }
                 ];
                 break;
             default:
@@ -181,4 +182,41 @@ export class TaskController {
 
         return tasks;
     }
+
+    protected async test(config: IConfig): Promise<{ command: string, params: string[] }> {
+        return {
+            command: 'echo',
+            params: ['hello']
+        };
+    }
+
+    protected getExecutor(
+        commandId: string,
+        config: IConfig,
+        getParams: TaskParamGetter,
+        outputStore: { [commandName: string]: any }
+    ) {
+        return async () => {
+            const {command, params} = await getParams(config);
+            await this.executeTask(commandId, command, params, outputStore);
+        };
+    }
+
+    protected async executeTask(
+        commandId: string,
+        command: string,
+        params: string[],
+        outputStore: { [commandName: string]: any }
+    ) {
+        const spawn = execa(command, params);
+        const stream = spawn.stdout;
+
+        getStream(stream).then((value) => {
+            outputStore[commandId] = value;
+        });
+
+        await spawn;
+    }
 }
+
+type TaskParamGetter = (config: IConfig) => Promise<{ command: string, params: string[] }>;

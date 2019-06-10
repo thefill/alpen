@@ -34,10 +34,6 @@ export class Alpen {
             return;
         }
 
-        // tslint:disable
-        console.log('config', config);
-        // tslint:enable
-
         if (!config.command.approved) {
             // tslint:disable-next-line
             console.warn(`Command aborted by user`);
