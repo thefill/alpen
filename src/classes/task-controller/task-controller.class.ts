@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import execa from 'execa';
 import getStream from 'get-stream';
 import Listr, {ListrOptions, ListrTask} from 'listr';
+import * as path from 'path';
 import {CommandType} from '../../enums/command-type';
 import {IConfig} from '../../interfaces';
 import {FileController} from '../file-controller';
@@ -19,173 +20,100 @@ export class TaskController {
         // clearOutput: false
     };
 
-    constructor(fileController: FileController, queueOptions?: ListrOptions){
+    constructor(fileController: FileController, queueOptions?: ListrOptions) {
         Object.assign(this.queueOptions, queueOptions);
         this.fileController = fileController;
     }
 
-    public async processTasks(tasks: ListrTask[]): Promise<void>{
+    public async processTasks(tasks: ListrTask[]): Promise<void> {
         const queue = new Listr(tasks, this.queueOptions);
         await queue.run();
 
+        // TODO: output commandOutput if loud mode
         // tslint:disable-next-line
-        console.log(this.commandOutput);
+        // console.log(this.commandOutput);
 
         // tslint:disable-next-line
-        console.log('%s Processing result:', chalk.green.bold('DONE'));
+        console.log('%s Processing finished', chalk.green.bold('DONE'));
     }
 
-    public getTasks(config: IConfig): ListrTask[]{
-        // TODO: implement
-        let tasks;
+    public getTasks(config: IConfig): ListrTask[] {
+        const tasks: Array<{
+            title: string,
+            callback: (
+                config: IConfig,
+                outputStore: { [commandName: string]: any }
+            ) => Promise<any>
+        }> = [];
 
-        switch (config.command.type){
+        switch (config.command.type) {
             case CommandType.INIT:
-                tasks = [
-                    {
-                        // check if dir dont exist
-                        title: 'Validate path',
-                        task: this.checkPathDontExist(config, this.commandOutput)
-                    },
-                    {
-                        // copy templates/root dir
-                        title: 'Copy template',
-                        task: this.copyRootTemplate(config, this.commandOutput)
-                    },
-                    {
-                        // replace placeholders
-                        title: 'Populate placeholders',
-                        task: this.populatePlaceholders(config, this.commandOutput)
-                    },
-                    {
-                        // install dependencies
-                        title: 'Install dependencies',
-                        task: this.installDependencies(config, this.commandOutput)
-                    }
-                ];
+                tasks.push(
+                    {title: 'Validate path', callback: this.checkPathDontExist},
+                    {title: 'Copy template', callback: this.copyRootTemplate},
+                    {title: 'Populate placeholders', callback: this.populatePlaceholders},
+                    {title: 'Install dependencies', callback: this.installDependencies}
+                );
                 break;
             case CommandType.ADD:
-                // for add:
-                tasks = [
-                    {
-                        // check if dir dont exist
-                        title: 'Validate path',
-                        task: this.checkPathDontExist(config, this.commandOutput)
-                    },
-                    {
-                        // - use package manager to install template as dev dep.
-                        // - copy template 'file' dir content to specified package location
-                        title: 'Retrieve template',
-                        task: this.installTemplate(config, this.commandOutput)
-                    },
-                    {
-                        // replace placeholders
-                        title: 'Populate placeholders',
-                        task: this.populatePlaceholders(config, this.commandOutput)
-                    },
-                    {
-                        // - keep hash of alpen.package.json
-                        // - keep package name, dir and if publishable
-                        title: 'Update workspace config',
-                        task: this.updateWorskpaceConfigForAdd(config, this.commandOutput)
-                    },
-                    {
-                        // - get package dependencies and compare with existing (warn if conflict)
-                        // - get package dev dependencies and compare with existing (warn if conflict)
-                        title: 'Resolve dependencies',
-                        task: this.resolveAddDependencies(config, this.commandOutput)
-                    },
-                    {
-                        // install dependencies
-                        title: 'Install dependencies',
-                        task: this.installDependencies(config, this.commandOutput)
-                    }
-                ];
+                tasks.push(
+                    {title: 'Validate path', callback: this.checkPathDontExist},
+                    {title: 'Retrieve template', callback: this.installTemplate},
+                    {title: 'Populate placeholders', callback: this.populatePlaceholders},
+                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForAdd},
+                    {title: 'Resolve dependencies', callback: this.resolveAddDependencies},
+                    {title: 'Install dependencies', callback: this.installDependencies}
+                );
                 break;
             case CommandType.REMOVE:
-                // for remove:
-                tasks = [
-                    {
-                        // - get package dependencies and compare with existing (remove one that are not used by other)
-                        // - get package dev dependencies and compare with existing (remove one that are not used by
-                        // other)
-                        title: 'Resolve dependencies',
-                        task: this.resolveRemoveDependencies(config, this.commandOutput)
-                    },
-                    {
-                        // - uninstall removable packages
-                        title: 'Install dependencies',
-                        task: this.uninstallObsolateDependencies(config, this.commandOutput)
-                    },
-                    {
-                        // - remove files
-                        title: 'Remove package files',
-                        task: this.removePackageFiles(config, this.commandOutput)
-                    },
-                    {
-                        // - remove entry from config
-                        title: 'Update workspace config',
-                        task: this.updateWorskpaceConfigForRemove(config, this.commandOutput)
-                    }
-                ];
+                tasks.push(
+                    {title: 'Resolve dependencies', callback: this.resolveRemoveDependencies},
+                    {title: 'Install dependencies', callback: this.uninstallObsolateDependencies},
+                    {title: 'Remove package files', callback: this.removePackageFiles},
+                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForRemove}
+                );
                 break;
             case CommandType.PUBLISH:
-                // for publish:
-                tasks = [
-                    {
-                        // - if package have definition proceed
-                        title: 'Retrieve package config',
-                        task: this.getPackageConfig(config, this.commandOutput)
-                    },
-                    {
-                        // - copy package config file to package.json
-                        title: 'Setup package',
-                        task: this.setupPackageForPublish(config, this.commandOutput)
-                    },
-                    {
-                        // - execute script with npm
-                        title: 'Execute script',
-                        task: this.executePackageScript(config, this.commandOutput)
-                    },
-                    {
-                        // - remove package.json
-                        title: 'Cleanup package',
-                        task: this.cleanupPackageForPublish(config, this.commandOutput)
-                    }
-                ];
+                tasks.push(
+                    {title: 'Retrieve package config', callback: this.getPackageConfig},
+                    {title: 'Setup package', callback: this.setupPackageForPublish},
+                    {title: 'Execute script', callback: this.executePackageScript},
+                    {title: 'Cleanup package', callback: this.cleanupPackageForPublish}
+                );
                 break;
             case CommandType.TEST:
             case CommandType.BUILD:
             case CommandType.SERVE:
             case CommandType.RUN:
                 // for other commands:
-                tasks = [
-                    {
-                        // - if package have definition proceed
-                        title: 'Retrieve package config',
-                        task: this.getPackageConfig(config, this.commandOutput)
-                    },
-                    {
-                        // - execute script with npm
-                        title: 'Execute script',
-                        task: this.executePackageScript(config, this.commandOutput)
-                    }
-                ];
+                tasks.push(
+                    {title: 'Retrieve package config', callback: this.getPackageConfig},
+                    {title: 'Execute script', callback: this.executePackageScript}
+                );
                 break;
             default:
                 throw new Error('Unknown command');
         }
 
-        return tasks;
+        // convert inner task to Listr task
+        return tasks.map((task) => {
+            return {
+                title: task.title,
+                task: async () => {
+                    await task.callback(config, this.commandOutput);
+                }
+            };
+        });
     }
 
     protected async executeShellScript(
         commandId: string,
         command: string,
         params: string[],
+        executionPath: string,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
-        const spawn = execa(command, params);
+    ): Promise<any> {
+        const spawn = execa(command, params, {cwd: executionPath});
         const stream = spawn.stdout;
 
         getStream(stream).then((value) => {
@@ -195,154 +123,168 @@ export class TaskController {
         await spawn;
     }
 
-    protected checkPathDontExist(
-        config: IConfig,
-        outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    protected async checkPathDontExist(
+        config: IConfig
+    ): Promise<any> {
+        // check if dir exist
+        const fullPath = path.resolve(config.workspacePath as string, config.command.path as string);
+        try {
+            await this.fileController.access(fullPath);
+        } catch (error) {
+            // if dont exist we are ok
+            return Promise.resolve();
+        }
+
+        return Promise.reject(new Error(`Path ${config.command.path} already exists`));
     }
 
-    protected copyRootTemplate(
-        config: IConfig,
-        outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    protected async copyRootTemplate(
+        config: IConfig
+    ): Promise<void> {
+        const from = path.resolve(__dirname, 'templates/root/files');
+        const to = path.resolve(config.workspacePath as string, config.command.path as string);
+
+        try {
+            await this.fileController.copy(from, to);
+        } catch (error) {
+            return Promise.reject(new Error(`Failed while coping template files`));
+        }
     }
 
-    protected installTemplate(
+    protected async installTemplate(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - use package manager to install template as dev dep.
+        await this.executeShellScript(
+            'installTemplate',
+            config.workspace.packageManager,
+            ['install'],
+            config.workspacePath as string,
+            outputStore
+        );
+
+        // - copy template 'file' dir content to specified package location
+        const from = path.resolve(config.workspacePath as string, `node_modules/${config.command.packages[0]}/files`);
+        const packagePath = config.command.path ? config.command.path : config.workspace.rootDir;
+        const to = path.resolve(config.workspacePath as string, packagePath, config.command.packages[0]);
+        await this.fileController.copy(from, to);
     }
 
-    protected populatePlaceholders(
+    protected async populatePlaceholders(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // replace placeholders
+        let dirPath;
+        if (config.command.type === CommandType.INIT) {
+            dirPath = path.resolve(config.workspacePath as string, config.command.path as string);
+        }
+        if (config.command.type === CommandType.ADD) {
+            const packagePath = config.command.path ? config.command.path : config.workspace.rootDir;
+            dirPath = path.resolve(config.workspacePath as string, packagePath, config.command.packages[0]);
+        }
+        // TODO: do for all placeholders
+        this.fileController.replace(dirPath, '{{ROOT_DIR}}', config.workspace.rootDir);
     }
 
-    protected updateWorskpaceConfigForAdd(
+    protected async updateWorskpaceConfigForAdd(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - keep hash of alpen.package.json
+        // - keep package name, dir and if publishable
+        // TODO: implement
     }
 
-    protected resolveAddDependencies(
+    protected async resolveAddDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - get package dependencies and compare with existing (warn if conflict)
+        // - get package dev dependencies and compare with existing (warn if conflict)
+        // TODO: implement
     }
 
-    protected installDependencies(
+    protected async installDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // install dependencies
+        await this.executeShellScript(
+            'installDependencies',
+            config.workspace.packageManager,
+            ['install'],
+            config.workspacePath as string,
+            outputStore
+        );
     }
 
-    protected resolveRemoveDependencies(
+    protected async resolveRemoveDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - get package dependencies and compare with existing (remove one that are not used by other)
+        // - get package dev dependencies and compare with existing (remove one that are not used by
+        // other)
+        // TODO: implement
     }
 
-    protected uninstallObsolateDependencies(
+    protected async uninstallObsolateDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - uninstall removable packages
+        // TODO: implement
     }
 
-    protected removePackageFiles(
+    protected async removePackageFiles(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - remove files
+        // TODO: implement
     }
 
-    protected updateWorskpaceConfigForRemove(
+    protected async updateWorskpaceConfigForRemove(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - remove entry from config
+        // TODO: implement
     }
 
-    protected setupPackageForPublish(
+    protected async setupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - copy package config file to package.json
+        // TODO: implement
     }
 
-    protected executePackageScript(
+    protected async executePackageScript(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - execute script with npm
+        // - execute script with npm
+        // TODO: implement
     }
 
-    protected cleanupPackageForPublish(
+    protected async cleanupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // TODO: implement
     }
 
-    protected getPackageConfig(
+    protected async getPackageConfig(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): () => Promise<any>{
-        return async () => {
-            // const {command, params} = await getParams(config);
-            // await this.executeShellScript('commandId', command, params, outputStore);
-        };
+    ): Promise<any> {
+        // - if package have definition proceed
+        // - if package have definition proceed
+        // TODO: implement
     }
 
 }
