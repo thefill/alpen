@@ -25,7 +25,8 @@ export class ConfigController {
             packageManager: PackageManager.NPM,
             rootDir: 'packages',
             packages: {}
-        }
+        },
+        alpenPath: ''
     };
 
     constructor(fileController: FileController) {
@@ -34,11 +35,12 @@ export class ConfigController {
         this.questionHandler = inquirer;
     }
 
-    public async getConfig(args: any, version: string): Promise<IConfig> {
+    public async getConfig(args: any, version: string, alpenPath: string): Promise<IConfig> {
+        this.config.alpenPath = alpenPath;
         // get command config from args
         this.config.command = this.processArgs(version, args, this.config.command);
 
-        if (this.config.command.type !== CommandType.INIT) {
+        if (this.config.command.type && this.config.command.type !== CommandType.INIT) {
             // get workspace config
             try {
                 this.config.workspacePath = await this.getWorkspaceConfigPath();
@@ -127,7 +129,7 @@ export class ConfigController {
         this.argsHandler
             .command('init <workspace> [path]')
             .description('create <workspace> in [path]')
-            .action((workspace, name, path) => {
+            .action((workspace, path) => {
                 configFromArgs.type = CommandType.INIT;
                 configFromArgs.workspace = workspace;
                 configFromArgs.path = path;
@@ -171,7 +173,7 @@ export class ConfigController {
         this.argsHandler
             .command('serve [package]')
             .description('serve [package] or all packages')
-            .action((packageName) => {
+            .action((packageName, command) => {
                 configFromArgs.type = CommandType.SERVE;
 
                 if (configFromArgs.packages) {
@@ -182,7 +184,7 @@ export class ConfigController {
         this.argsHandler
             .command('build [package]')
             .description('build [package] or all packages')
-            .action((packageName) => {
+            .action((packageName, command) => {
                 configFromArgs.type = CommandType.BUILD;
 
                 if (configFromArgs.packages) {
@@ -227,6 +229,10 @@ export class ConfigController {
             configFromArgs.mode = ExecutionMode.LOUD;
         } else {
             configFromArgs.mode = ExecutionMode.PRETTY;
+        }
+
+        if (!configFromArgs.path || !configFromArgs.path.length) {
+            configFromArgs.path = process.cwd();
         }
 
         return configFromArgs;

@@ -131,23 +131,32 @@ export class TaskController {
         try {
             await this.fileController.access(fullPath);
         } catch (error) {
-            // if dont exist we are ok
-            return Promise.resolve();
+            throw new Error(`Path not accessible > ${error.message} ${this.fileController.access}`);
         }
 
-        return Promise.reject(new Error(`Path ${config.command.path} already exists`));
+        try {
+            await this.fileController.notExist(fullPath);
+        } catch (error) {
+            throw new Error(`Path ${config.command.path} already exists > ${error.message}`);
+        }
     }
 
     protected async copyRootTemplate(
         config: IConfig
     ): Promise<void> {
-        const from = path.resolve(__dirname, 'templates/root/files');
-        const to = path.resolve(config.workspacePath as string, config.command.path as string);
+        const from = path.resolve(config.alpenPath, 'templates/root/files');
+        const to = path.resolve(
+            config.workspacePath as string,
+            config.command.path as string,
+            config.command.workspace as string
+        );
 
         try {
-            await this.fileController.copy(from, to);
+            // await this.fileController.copy(from, to);
+            await this.fileController.copy('/Users/fill/Documents/alpen/templates/root/files',
+                '/Users/fill/Documents/test-alpen/test');
         } catch (error) {
-            return Promise.reject(new Error(`Failed while coping template files`));
+            return Promise.reject(new Error(`Failed while coping template files > ${error.message}`));
         }
     }
 

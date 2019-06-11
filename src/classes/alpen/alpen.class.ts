@@ -1,4 +1,5 @@
 import {ListrTask} from 'listr';
+import * as path from 'path';
 import {IConfig} from '../../interfaces';
 import {ConfigController} from '../config-controller';
 import {FileController} from '../file-controller';
@@ -24,15 +25,22 @@ export class Alpen {
     public async init(args: any) {
         // get config
         let config: IConfig;
+        // get root path as we execute in ./dist/cjs/classes/alpen/
+        const alpenRootPath = path.resolve(__dirname, '../../../../');
         try {
-            const version = await this.getVersion();
-            config = await this.configController.getConfig(args, version);
+            const version = await this.getVersion(alpenRootPath);
+            config = await this.configController.getConfig(args, version, alpenRootPath);
         } catch (error) {
             // tslint:disable-next-line
             console.error(`Config invalid > ${error.message}`);
             process.exit(1);
             return;
         }
+
+        // tslint:disable-next-line
+        console.log(config);
+        // tslint:disable-next-line
+        console.log('-------');
 
         if (!config.command.approved) {
             // tslint:disable-next-line
@@ -52,10 +60,11 @@ export class Alpen {
         }
     }
 
-    protected async getVersion(): Promise<string> {
+    protected async getVersion(alpenPath: string): Promise<string> {
         let version;
         try {
-            const content = await this.fileController.read('./package.json');
+            const packagePath = path.resolve(alpenPath, 'package.json');
+            const content = await this.fileController.read(packagePath);
             version = JSON.parse(content.toString()).version;
         } catch (error) {
             return Promise.reject(new Error(`Unable to retrieve version of package > ${error.message}`));
