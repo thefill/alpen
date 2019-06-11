@@ -1,6 +1,7 @@
 import {Command} from 'commander';
 import * as inquirer from 'inquirer';
 import {Inquirer, Question, Questions} from 'inquirer';
+import * as path from 'path';
 import {CommandType} from '../../enums/command-type';
 import {ExecutionMode} from '../../enums/execution-mode';
 import {PackageManager} from '../../enums/package-manager';
@@ -40,7 +41,11 @@ export class ConfigController {
         // get command config from args
         this.config.command = this.processArgs(version, args, this.config.command);
 
-        if (this.config.command.type && this.config.command.type !== CommandType.INIT) {
+        if (this.config.command.type === CommandType.UNKNOWN) {
+            throw new Error('Unknown command provided');
+        }
+
+        if (this.config.command.type !== CommandType.INIT) {
             // get workspace config
             try {
                 this.config.workspacePath = await this.getWorkspaceConfigPath();
@@ -62,6 +67,14 @@ export class ConfigController {
             throw new Error(`Provided config has errors > ${error.message}`);
         }
 
+        if (this.config.command.type === CommandType.INIT) {
+            this.config.workspacePath = path.resolve(
+                process.cwd(),
+                this.config.command.path as string,
+                this.config.command.workspace as string
+            );
+        }
+
         return Object.assign({}, this.config);
     }
 
@@ -71,9 +84,6 @@ export class ConfigController {
                 throw new Error('Creating workspace inside another workspace is not allowed');
             }
             return;
-        }
-        if (config.command.type === CommandType.UNKNOWN) {
-            throw new Error('Unknown command provided');
         }
 
         if (!config.command.packages || !config.command.packages.length) {

@@ -1,5 +1,6 @@
 import {ListrTask} from 'listr';
 import * as path from 'path';
+import {Placeholder} from '../../enums/placeholder';
 import {IConfig} from '../../interfaces';
 import {ConfigController} from '../config-controller';
 import {FileController} from '../file-controller';

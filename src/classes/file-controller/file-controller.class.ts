@@ -3,7 +3,7 @@ import fs, {MakeDirectoryOptions, PathLike, Stats, WriteFileOptions} from 'fs';
 import {md5FileAsPromised as md5File} from 'md5-file/promise';
 import mkdirp from 'mkdirp';
 import {ncp, Options} from 'ncp';
-import replace from 'replace';
+import * as path from 'path';
 import {promisify} from 'util';
 
 export class FileController {
@@ -13,13 +13,6 @@ export class FileController {
     protected copyHandler: (source: string, destination: string, options?: Options) => Promise<void>;
     protected readHandler: (path: PathLike | number, options?: { encoding?: null; flag?: string; }) => Promise<Buffer>;
     protected findClosestHandler: (...args: any) => Promise<string | undefined>;
-    protected replaceHandler: (options: {
-        regex: string,
-        replacement: string,
-        paths: string[],
-        recursive?: boolean,
-        silent?: boolean,
-    }) => Promise<void>;
     protected hashHandler: md5File;
     protected mkdirHandler: (path: PathLike, options?: number | string | MakeDirectoryOptions) => Promise<void>;
 
@@ -29,92 +22,161 @@ export class FileController {
         this.writeHandler = promisify(fs.writeFile);
         this.readHandler = promisify(fs.readFile);
         this.copyHandler = promisify(ncp);
-        this.replaceHandler = promisify(replace);
         this.hashHandler = md5File;
         this.findClosestHandler = findUp.default;
         this.mkdirHandler = promisify(mkdirp);
     }
 
-    public async copy(from: string, to: string): Promise<void> {
+    public async copy(fromPath: string, toPath: string): Promise<void> {
         try {
-            await this.access(from);
+            await this.access(fromPath);
         } catch (error) {
             throw new Error(`Copy failed > ${error.message}`);
         }
 
         try {
-            await this.access(to);
+            await this.access(toPath);
         } catch (error) {
             // we dont want destination to exist
-            return this.copyHandler(from, to, {clobber: false});
+            return this.copyHandler(fromPath, toPath, {clobber: false});
         }
 
         throw new Error(`Copy failed > destination dir exists`);
     }
 
-    public async write(path: PathLike, data: any): Promise<void> {
+    public async write(filePath: PathLike, data: any): Promise<void> {
         try {
-            await this.access(path);
+            await this.access(filePath);
         } catch (error) {
             throw new Error(`Write failed > ${error.message}`);
         }
-        return this.writeHandler(path, data, 'utf8');
+        return this.writeHandler(filePath, data, 'utf8');
     }
 
-    public async read(path: PathLike): Promise<Buffer> {
+    public async read(filePath: PathLike): Promise<Buffer> {
         try {
-            await this.access(path);
+            await this.access(filePath);
         } catch (error) {
             throw new Error(`Read failed > ${error.message}`);
         }
-        return this.readHandler(path);
+        return this.readHandler(filePath);
     }
 
-    public async access(path: PathLike) {
+    public async access(pathToCheck: PathLike) {
         try {
             // tslint:disable-next-line
-            await this.accessHandler(path, fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+            await this.accessHandler(pathToCheck, fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
         } catch (error) {
-            throw new Error(`Current user has no access rights to path ${path}`);
+            throw new Error(`Current user has no access rights to path ${pathToCheck}`);
         }
     }
 
-    public async exist(path: PathLike) {
+    public async exist(pathToCheck: PathLike) {
         try {
-            await this.statsHandler(path);
+            await this.statsHandler(pathToCheck);
         } catch (error) {
-            throw new Error(`Path ${path} dont exist or no access`);
+            throw new Error(`Path ${pathToCheck} dont exist or no access`);
         }
     }
 
-    public async notExist(path: PathLike) {
+    public async notExist(pathToCheck: PathLike) {
         try {
-            await this.statsHandler(path);
+            await this.statsHandler(pathToCheck);
         } catch (error) {
             return Promise.resolve();
         }
-        throw new Error(`Path ${path} dont exist or no access`);
+        throw new Error(`Path ${pathToCheck} dont exist or no access`);
     }
 
-    public async findClosestUp(path: string | string[]): Promise<string | undefined> {
-        return await this.findClosestHandler(path);
+    public async findClosestUp(pathToCheck: string | string[]): Promise<string | undefined> {
+        return await this.findClosestHandler(pathToCheck);
     }
 
-    public async replace(paths: string[], pattern: string, replacement: string) {
-        return this.replaceHandler({
-            paths: paths,
-            regex: pattern,
-            replacement: replacement,
-            recursive: true,
-            silent: true
+    public async replace(dirPath: string, pattern: string, replacement: string) {
+        const replaceProcessor = async (filePath) => {
+            let content: Buffer | string = await this.read(filePath);
+            content = content.toString().replace(pattern, replacement);
+            await this.write(filePath, content);
+        };
+
+        try {
+            const allFilePaths = await this.listAllFiles(dirPath);
+            await this.processMultiple(replaceProcessor, allFilePaths);
+        } catch (error) {
+            throw new Error(`Error while replacing pattern in path ${dirPath}`);
+        }
+    }
+
+    public async processMultiple(processor: (value) => Promise<any>, values: any[]) {
+        const requests = values.map((value) => {
+            return processor(value);
         });
+
+        await Promise.all(requests);
     }
 
-    public async fileHash(path: string) {
-        return this.hashHandler(path);
+    public async listAllFiles(dirPath: string): Promise<string[]> {
+        console.log(`checking dir ${dirPath}`);
+        const readdir = promisify(fs.readdir);
+
+        let dirMembers: string[];
+        try {
+            dirMembers = await readdir(dirPath);
+        } catch (error) {
+            throw new Error(`Unable to retrieve list of files from path ${dirPath} > ${error.message}`);
+        }
+
+        if (!dirMembers.length) {
+            return [];
+        }
+
+        dirMembers = dirMembers.map((dirMember) => {
+            return path.join(dirPath, dirMember);
+        });
+
+        const dirs: string[] = [];
+        const files: string[] = [];
+        const getDirMembers = async (memberPath) => {
+            let stat;
+            try {
+                stat = await this.statsHandler(memberPath);
+            } catch (error) {
+                throw new Error(`Error while listing all files > ${error.message}`);
+            }
+            if (stat.isDirectory()) {
+                // tslint:disable-next-line
+                console.log(`dir > ${memberPath}`);
+                dirs.push(memberPath);
+            } else if (stat.isFile()) {
+                // tslint:disable-next-line
+                console.log(`file > ${memberPath}`);
+                files.push(memberPath);
+            }
+        };
+
+        const dirMembersRetrieval = dirMembers.map((memberPath) => {
+            return getDirMembers(memberPath);
+        });
+        await Promise.all(dirMembersRetrieval);
+
+        const getNestedDirMembers = async (memberPath) => {
+            const dirFiles: string[] = await this.listAllFiles(memberPath);
+            files.push(...dirFiles);
+        };
+
+        const nestedDirMembersRetrieval = await dirs.map(async (memberPath) => {
+            return getNestedDirMembers(memberPath);
+        });
+        await Promise.all(nestedDirMembersRetrieval);
+
+        return files;
     }
 
-    public async mkdir(path: PathLike) {
-        return this.mkdirHandler(path);
+    public async fileHash(filePath: string) {
+        return this.hashHandler(filePath);
+    }
+
+    public async mkdir(dirPath: PathLike) {
+        return this.mkdirHandler(dirPath);
     }
 }

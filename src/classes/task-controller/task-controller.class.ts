@@ -126,25 +126,10 @@ export class TaskController {
     protected async checkWorkspaceDontExist(
         config: IConfig
     ): Promise<any>{
-        // check if dir exist
-        const workspacePath = path.resolve(
-            config.command.path as string,
-            config.command.workspace as string
-        );
-        const fullPath = path.resolve(
-            config.workspacePath as string,
-            workspacePath
-        );
         try {
-            await this.fileController.access(fullPath);
+            await this.fileController.notExist(config.workspacePath as string);
         } catch (error){
-            throw new Error(`Path not accessible > ${error.message} ${this.fileController.access}`);
-        }
-
-        try {
-            await this.fileController.notExist(fullPath);
-        } catch (error){
-            throw new Error(`Path ${workspacePath} already exists`);
+            throw new Error(`Path ${config.workspacePath} already exists`);
         }
     }
 
@@ -160,11 +145,6 @@ export class TaskController {
             config.workspacePath as string,
             packagePath
         );
-        try {
-            await this.fileController.access(fullPath);
-        } catch (error){
-            throw new Error(`Path not accessible > ${error.message} ${this.fileController.access}`);
-        }
 
         try {
             await this.fileController.notExist(fullPath);
@@ -219,7 +199,7 @@ export class TaskController {
         outputStore: { [commandName: string]: any }
     ): Promise<any>{
         // replace placeholders
-        let dirPath;
+        let dirPath = '';
         if (config.command.type === CommandType.INIT){
             dirPath = path.resolve(config.workspacePath as string, config.command.path as string);
         }
@@ -228,7 +208,7 @@ export class TaskController {
             dirPath = path.resolve(config.workspacePath as string, packagePath, config.command.packages[0]);
         }
         // TODO: do for all placeholders
-        this.fileController.replace(dirPath, '{{ROOT_DIR}}', config.workspace.rootDir);
+        await this.fileController.replace(dirPath, '{{ROOT_DIR}}', config.workspace.rootDir);
     }
 
     protected async updateWorskpaceConfigForAdd(
