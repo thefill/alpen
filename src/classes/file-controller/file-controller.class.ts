@@ -81,21 +81,19 @@ export class FileController {
 
     public async exist(path: PathLike) {
         try {
-            // tslint:disable-next-line
             await this.statsHandler(path);
         } catch (error) {
-            throw new Error(`Path ${path} dont exist`);
+            throw new Error(`Path ${path} dont exist or no access`);
         }
     }
 
     public async notExist(path: PathLike) {
         try {
-            // tslint:disable-next-line
             await this.statsHandler(path);
         } catch (error) {
             return Promise.resolve();
         }
-        throw new Error(`Path ${path} dont exist`);
+        throw new Error(`Path ${path} dont exist or no access`);
     }
 
     public async findClosestUp(path: string | string[]): Promise<string | undefined> {

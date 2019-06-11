@@ -20,12 +20,12 @@ export class TaskController {
         // clearOutput: false
     };
 
-    constructor(fileController: FileController, queueOptions?: ListrOptions) {
+    constructor(fileController: FileController, queueOptions?: ListrOptions){
         Object.assign(this.queueOptions, queueOptions);
         this.fileController = fileController;
     }
 
-    public async processTasks(tasks: ListrTask[]): Promise<void> {
+    public async processTasks(tasks: ListrTask[]): Promise<void>{
         const queue = new Listr(tasks, this.queueOptions);
         await queue.run();
 
@@ -37,7 +37,7 @@ export class TaskController {
         console.log('%s Processing finished', chalk.green.bold('DONE'));
     }
 
-    public getTasks(config: IConfig): ListrTask[] {
+    public getTasks(config: IConfig): ListrTask[]{
         const tasks: Array<{
             title: string,
             callback: (
@@ -46,39 +46,39 @@ export class TaskController {
             ) => Promise<any>
         }> = [];
 
-        switch (config.command.type) {
+        switch (config.command.type){
             case CommandType.INIT:
                 tasks.push(
-                    {title: 'Validate path', callback: this.checkPathDontExist},
-                    {title: 'Copy template', callback: this.copyRootTemplate},
-                    {title: 'Populate placeholders', callback: this.populatePlaceholders},
-                    {title: 'Install dependencies', callback: this.installDependencies}
+                    {title: 'Validate path', callback: this.checkWorkspaceDontExist.bind(this)},
+                    {title: 'Copy template', callback: this.copyRootTemplate.bind(this)},
+                    {title: 'Populate placeholders', callback: this.populatePlaceholders.bind(this)},
+                    {title: 'Install dependencies', callback: this.installDependencies.bind(this)}
                 );
                 break;
             case CommandType.ADD:
                 tasks.push(
-                    {title: 'Validate path', callback: this.checkPathDontExist},
-                    {title: 'Retrieve template', callback: this.installTemplate},
-                    {title: 'Populate placeholders', callback: this.populatePlaceholders},
-                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForAdd},
-                    {title: 'Resolve dependencies', callback: this.resolveAddDependencies},
-                    {title: 'Install dependencies', callback: this.installDependencies}
+                    {title: 'Validate path', callback: this.checkPackageDontExist.bind(this)},
+                    {title: 'Retrieve template', callback: this.installTemplate.bind(this)},
+                    {title: 'Populate placeholders', callback: this.populatePlaceholders.bind(this)},
+                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForAdd.bind(this)},
+                    {title: 'Resolve dependencies', callback: this.resolveAddDependencies.bind(this)},
+                    {title: 'Install dependencies', callback: this.installDependencies.bind(this)}
                 );
                 break;
             case CommandType.REMOVE:
                 tasks.push(
-                    {title: 'Resolve dependencies', callback: this.resolveRemoveDependencies},
-                    {title: 'Install dependencies', callback: this.uninstallObsolateDependencies},
-                    {title: 'Remove package files', callback: this.removePackageFiles},
-                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForRemove}
+                    {title: 'Resolve dependencies', callback: this.resolveRemoveDependencies.bind(this)},
+                    {title: 'Install dependencies', callback: this.uninstallObsolateDependencies.bind(this)},
+                    {title: 'Remove package files', callback: this.removePackageFiles.bind(this)},
+                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForRemove.bind(this)}
                 );
                 break;
             case CommandType.PUBLISH:
                 tasks.push(
-                    {title: 'Retrieve package config', callback: this.getPackageConfig},
-                    {title: 'Setup package', callback: this.setupPackageForPublish},
-                    {title: 'Execute script', callback: this.executePackageScript},
-                    {title: 'Cleanup package', callback: this.cleanupPackageForPublish}
+                    {title: 'Retrieve package config', callback: this.getPackageConfig.bind(this)},
+                    {title: 'Setup package', callback: this.setupPackageForPublish.bind(this)},
+                    {title: 'Execute script', callback: this.executePackageScript.bind(this)},
+                    {title: 'Cleanup package', callback: this.cleanupPackageForPublish.bind(this)}
                 );
                 break;
             case CommandType.TEST:
@@ -87,8 +87,8 @@ export class TaskController {
             case CommandType.RUN:
                 // for other commands:
                 tasks.push(
-                    {title: 'Retrieve package config', callback: this.getPackageConfig},
-                    {title: 'Execute script', callback: this.executePackageScript}
+                    {title: 'Retrieve package config', callback: this.getPackageConfig.bind(this)},
+                    {title: 'Execute script', callback: this.executePackageScript.bind(this)}
                 );
                 break;
             default:
@@ -112,7 +112,7 @@ export class TaskController {
         params: string[],
         executionPath: string,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         const spawn = execa(command, params, {cwd: executionPath});
         const stream = spawn.stdout;
 
@@ -123,27 +123,59 @@ export class TaskController {
         await spawn;
     }
 
-    protected async checkPathDontExist(
+    protected async checkWorkspaceDontExist(
         config: IConfig
-    ): Promise<any> {
+    ): Promise<any>{
         // check if dir exist
-        const fullPath = path.resolve(config.workspacePath as string, config.command.path as string);
+        const workspacePath = path.resolve(
+            config.command.path as string,
+            config.command.workspace as string
+        );
+        const fullPath = path.resolve(
+            config.workspacePath as string,
+            workspacePath
+        );
         try {
             await this.fileController.access(fullPath);
-        } catch (error) {
+        } catch (error){
             throw new Error(`Path not accessible > ${error.message} ${this.fileController.access}`);
         }
 
         try {
             await this.fileController.notExist(fullPath);
-        } catch (error) {
-            throw new Error(`Path ${config.command.path} already exists > ${error.message}`);
+        } catch (error){
+            throw new Error(`Path ${workspacePath} already exists`);
+        }
+    }
+
+    protected async checkPackageDontExist(
+        config: IConfig
+    ): Promise<any>{
+        // check if dir exist
+        const packagePath = path.resolve(
+            config.command.path as string,
+            config.command.packages[0] as string
+        );
+        const fullPath = path.resolve(
+            config.workspacePath as string,
+            packagePath
+        );
+        try {
+            await this.fileController.access(fullPath);
+        } catch (error){
+            throw new Error(`Path not accessible > ${error.message} ${this.fileController.access}`);
+        }
+
+        try {
+            await this.fileController.notExist(fullPath);
+        } catch (error){
+            throw new Error(`Path ${packagePath} already exists`);
         }
     }
 
     protected async copyRootTemplate(
         config: IConfig
-    ): Promise<void> {
+    ): Promise<void>{
         const from = path.resolve(config.alpenPath, 'templates/root/files');
         const to = path.resolve(
             config.workspacePath as string,
@@ -153,9 +185,11 @@ export class TaskController {
 
         try {
             // await this.fileController.copy(from, to);
-            await this.fileController.copy('/Users/fill/Documents/alpen/templates/root/files',
-                '/Users/fill/Documents/test-alpen/test');
-        } catch (error) {
+            await this.fileController.copy(
+                '/Users/fill/Documents/alpen/templates/root/files',
+                '/Users/fill/Documents/test-alpen/test'
+            );
+        } catch (error){
             return Promise.reject(new Error(`Failed while coping template files > ${error.message}`));
         }
     }
@@ -163,7 +197,7 @@ export class TaskController {
     protected async installTemplate(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - use package manager to install template as dev dep.
         await this.executeShellScript(
             'installTemplate',
@@ -183,13 +217,13 @@ export class TaskController {
     protected async populatePlaceholders(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // replace placeholders
         let dirPath;
-        if (config.command.type === CommandType.INIT) {
+        if (config.command.type === CommandType.INIT){
             dirPath = path.resolve(config.workspacePath as string, config.command.path as string);
         }
-        if (config.command.type === CommandType.ADD) {
+        if (config.command.type === CommandType.ADD){
             const packagePath = config.command.path ? config.command.path : config.workspace.rootDir;
             dirPath = path.resolve(config.workspacePath as string, packagePath, config.command.packages[0]);
         }
@@ -200,7 +234,7 @@ export class TaskController {
     protected async updateWorskpaceConfigForAdd(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - keep hash of alpen.package.json
         // - keep package name, dir and if publishable
         // TODO: implement
@@ -209,7 +243,7 @@ export class TaskController {
     protected async resolveAddDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - get package dependencies and compare with existing (warn if conflict)
         // - get package dev dependencies and compare with existing (warn if conflict)
         // TODO: implement
@@ -218,7 +252,7 @@ export class TaskController {
     protected async installDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // install dependencies
         await this.executeShellScript(
             'installDependencies',
@@ -232,7 +266,7 @@ export class TaskController {
     protected async resolveRemoveDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - get package dependencies and compare with existing (remove one that are not used by other)
         // - get package dev dependencies and compare with existing (remove one that are not used by
         // other)
@@ -242,7 +276,7 @@ export class TaskController {
     protected async uninstallObsolateDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - uninstall removable packages
         // TODO: implement
     }
@@ -250,7 +284,7 @@ export class TaskController {
     protected async removePackageFiles(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - remove files
         // TODO: implement
     }
@@ -258,7 +292,7 @@ export class TaskController {
     protected async updateWorskpaceConfigForRemove(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - remove entry from config
         // TODO: implement
     }
@@ -266,7 +300,7 @@ export class TaskController {
     protected async setupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - copy package config file to package.json
         // TODO: implement
     }
@@ -274,7 +308,7 @@ export class TaskController {
     protected async executePackageScript(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - execute script with npm
         // - execute script with npm
         // TODO: implement
@@ -283,14 +317,14 @@ export class TaskController {
     protected async cleanupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // TODO: implement
     }
 
     protected async getPackageConfig(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any> {
+    ): Promise<any>{
         // - if package have definition proceed
         // - if package have definition proceed
         // TODO: implement
