@@ -235,9 +235,16 @@ export class TaskController {
         config: IConfig,
         outputStore: { [commandName: string]: any }
     ): Promise<any> {
+        // TODO: implement:
+        // IMPORTANT: change way we store alpen.package.json:
+        //  - its now becomes package.json
+        //  - we remove it from the template and move to dir only for publish
+        //  - we keep it with placeholders untouched
+        //  - we replace placeholders only temporally for command
+
+        // Task:
         // - keep hash of package.json
-        // - keep package name, dir and if publishable
-        // TODO: implement
+        // - keep package name, dir and snapshot of
     }
 
     protected async resolveAddDependencies(

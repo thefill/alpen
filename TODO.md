@@ -23,6 +23,29 @@ Adventages:
    - if new packages schematics introduce different version user needs to be warned and asked to resolve
    - local versions of packages cross link each other
    
+#HOW IT WORKS
+When user executes 'alpen add @alpen/templateName@x.x.x packageName':
+   - npm installs this dependency as dev dependency
+   - copies the content of 'files dir' to the './packages/packageName' dir
+   - checks if all dependencies of the package.json dont collide with existing version in ./package.json
+   - if collide warn user, append dependencies (even duplicates) and terminate (user needs to resolve manually and type npm install)
+   - else we install all dependencies
+   - copy content of package to .alpenrc and remove versions from dependencies - store as an array
+   - make hash of dependencies to check if something changed
+   
+When user executes 'alpen command ...'
+    - when command add / remove we act on it:
+       - for add above,
+       - for remove remove packages/packageName and all its dependencies, then npm install
+    - when publish
+        - produce package.json in subpackage
+        - recreate dependency objects from array of dep keys
+    - when other command 
+       - we install deps via npm
+       - we udpate other package deps
+       - we execute script
+
+   
 #FUNCTIONALITY
    - user can call following npm actions in the initialised workspace ?????? do we need this????
     
@@ -53,27 +76,3 @@ Adventages:
     alpen publish packageName
     // Extra command:
     alpen init workspaceName
-
-#HOW IT WORKS
-When user executes 'alpen add @alpen/templateName@x.x.x packageName':
-   - npm installs this dependency as dev dependency
-   - copies the content of 'files dir' to the './packages/packageName' dir
-   - asks user for: {{name}}, {{version}}, {{description}}, {{author}}, {{repository}}
-   - we use this values and use sed to replace markers in all file content also replace {{path}} & {escaped-path}} with path to package
-   - sets hash of alpen.package.json in .alpenrc
-   - checks if all dependencies of the moved package.json dont collide with existing version in ./package.json
-   - if collide warn user, append dependencies (even duplicates) and terminate (user needs to resolve manually and type npm install)
-   - else we install all dependencies
-   
-When user executes 'alpen command ...'
-    - when command add / remove we act on it:
-       - for add above,
-       - for remove remove packages/packageName and all its dependencies, then npm install
-    - when other command 
-       - we check if alpen.package.json changed via hash if so we update
-           - .alpenrc package hash
-           - .alpenrc package scripts
-           - .alpenrc dependencies
-       - we install deps via npm
-       - we udpate other package deps
-       - we execute script
