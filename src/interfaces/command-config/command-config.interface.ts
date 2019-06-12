@@ -10,6 +10,6 @@ export interface ICommandConfig {
     packages: string[];
     workspace?: string;
     template?: string;
-    path?: string;
+    path: string;
     approved?: boolean;
 }

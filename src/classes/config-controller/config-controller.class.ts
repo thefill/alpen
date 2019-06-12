@@ -5,7 +5,7 @@ import * as path from 'path';
 import {CommandType} from '../../enums/command-type';
 import {ExecutionMode} from '../../enums/execution-mode';
 import {PackageManager} from '../../enums/package-manager';
-import {ICommandConfig, IConfig, IWorkspaceConfig} from '../../interfaces';
+import {ICommandConfig, IConfig, IPackageConfig, IWorkspaceConfig} from '../../interfaces';
 import {FileController} from '../file-controller';
 
 export class ConfigController {
@@ -20,14 +20,30 @@ export class ConfigController {
             mode: ExecutionMode.PRETTY,
             packages: [],
             noPrompts: false,
-            approved: true
+            approved: true,
+            path: ''
         },
+        alpenVersion: '',
+        alpenPath: '',
         workspace: {
             packageManager: PackageManager.NPM,
             rootDir: 'packages',
             packages: {}
         },
-        alpenPath: ''
+        workspacePackage: {
+            name: 'unknown',
+            version: '0.0.1',
+            engines: {
+                node: `'>=${process.version}'`
+            },
+            private: true,
+            author: 'Uknown',
+            repository: {
+                type: 'git',
+                url: '-'
+            },
+            license: 'Unknown'
+        }
     };
 
     constructor(fileController: FileController) {
@@ -38,6 +54,7 @@ export class ConfigController {
 
     public async getConfig(args: any, version: string, alpenPath: string): Promise<IConfig> {
         this.config.alpenPath = alpenPath;
+        this.config.alpenVersion = version;
         // get command config from args
         this.config.command = this.processArgs(version, args, this.config.command);
 
@@ -52,6 +69,13 @@ export class ConfigController {
                 this.config.workspace = await this.getWorkspaceConfig(this.config.workspacePath);
             } catch (error) {
                 throw new Error(`No workspace config > ${error.message}`);
+            }
+            // get package manager config
+            try {
+                const packageManagerConfig = await this.getPackageManagerConfig(this.config.workspacePath);
+                this.config.workspacePackage = Object.assign(this.config.workspacePackage, packageManagerConfig);
+            } catch (error) {
+                throw new Error(`No package manager config > ${error.message}`);
             }
         }
 
@@ -253,7 +277,7 @@ export class ConfigController {
 
         switch (config.command.type) {
             case CommandType.INIT:
-                config.workspace.packageManager = answers.packageManager;
+                config.workspace.packageManager = answers.workspacePackage;
                 config.workspace.rootDir = answers.rootDir;
                 break;
             case CommandType.REMOVE:
@@ -294,6 +318,20 @@ export class ConfigController {
         return workspaceConfig;
     }
 
+    protected async getPackageManagerConfig(workspaceConfigPath: string): Promise<IPackageConfig> {
+        let packageManagerConfig: IPackageConfig | Buffer;
+        try {
+            const packageManagerConfigPath = path.join(workspaceConfigPath, 'package.json');
+            await this.fileController.access(packageManagerConfigPath);
+            packageManagerConfig = await this.fileController.read(packageManagerConfigPath);
+            packageManagerConfig = JSON.parse(packageManagerConfig.toString()) as IPackageConfig;
+        } catch (error) {
+            return Promise.reject(new Error(`Unable to load workspace package manager config > ${error.message}`));
+        }
+
+        return packageManagerConfig;
+    }
+
     protected getQuestions(config: ICommandConfig): Questions {
         const questions: Question[] = [];
 
@@ -303,7 +341,7 @@ export class ConfigController {
                 questions.push(
                     {
                         type: 'list',
-                        name: 'packageManager',
+                        name: 'workspacePackage',
                         message: 'What is your preferred package manager?',
                         default: 0,
                         choices: [

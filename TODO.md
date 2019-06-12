@@ -8,6 +8,11 @@ and manages scripts, publishing etc via alpen.
 use code from: https://github.com/kentcdodds/nps/blob/master/src/index.js and whole nps!
 use cli from: https://www.twilio.com/blog/how-to-build-a-cli-with-node-js
 
+// TODO: 
+//  - make 'alpen init name' a syntatic sugar for 'alpen add defaultWorkspace name'
+//    (workspace added same as packages)
+//  - allow adding workspaces even inside other workspaces - just ask if user is aware
+
 Adventages:
    - common package versions enforced
    - common commands across stack

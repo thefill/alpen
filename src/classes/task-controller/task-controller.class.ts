@@ -4,6 +4,7 @@ import getStream from 'get-stream';
 import Listr, {ListrOptions, ListrTask} from 'listr';
 import * as path from 'path';
 import {CommandType} from '../../enums/command-type';
+import {Placeholder} from '../../enums/placeholder';
 import {IConfig} from '../../interfaces';
 import {FileController} from '../file-controller';
 
@@ -20,12 +21,12 @@ export class TaskController {
         // clearOutput: false
     };
 
-    constructor(fileController: FileController, queueOptions?: ListrOptions){
+    constructor(fileController: FileController, queueOptions?: ListrOptions) {
         Object.assign(this.queueOptions, queueOptions);
         this.fileController = fileController;
     }
 
-    public async processTasks(tasks: ListrTask[]): Promise<void>{
+    public async processTasks(tasks: ListrTask[]): Promise<void> {
         const queue = new Listr(tasks, this.queueOptions);
         await queue.run();
 
@@ -37,7 +38,7 @@ export class TaskController {
         console.log('%s Processing finished', chalk.green.bold('DONE'));
     }
 
-    public getTasks(config: IConfig): ListrTask[]{
+    public getTasks(config: IConfig): ListrTask[] {
         const tasks: Array<{
             title: string,
             callback: (
@@ -46,7 +47,7 @@ export class TaskController {
             ) => Promise<any>
         }> = [];
 
-        switch (config.command.type){
+        switch (config.command.type) {
             case CommandType.INIT:
                 tasks.push(
                     {title: 'Validate path', callback: this.checkWorkspaceDontExist.bind(this)},
@@ -60,7 +61,7 @@ export class TaskController {
                     {title: 'Validate path', callback: this.checkPackageDontExist.bind(this)},
                     {title: 'Retrieve template', callback: this.installTemplate.bind(this)},
                     {title: 'Populate placeholders', callback: this.populatePlaceholders.bind(this)},
-                    {title: 'Update workspace config', callback: this.updateWorskpaceConfigForAdd.bind(this)},
+                    {title: 'Update workspace config', callback: this.updateWorkspaceConfigForAdd.bind(this)},
                     {title: 'Resolve dependencies', callback: this.resolveAddDependencies.bind(this)},
                     {title: 'Install dependencies', callback: this.installDependencies.bind(this)}
                 );
@@ -112,7 +113,7 @@ export class TaskController {
         params: string[],
         executionPath: string,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         const spawn = execa(command, params, {cwd: executionPath});
         const stream = spawn.stdout;
 
@@ -125,17 +126,17 @@ export class TaskController {
 
     protected async checkWorkspaceDontExist(
         config: IConfig
-    ): Promise<any>{
+    ): Promise<any> {
         try {
             await this.fileController.notExist(config.workspacePath as string);
-        } catch (error){
+        } catch (error) {
             throw new Error(`Path ${config.workspacePath} already exists`);
         }
     }
 
     protected async checkPackageDontExist(
         config: IConfig
-    ): Promise<any>{
+    ): Promise<any> {
         // check if dir exist
         const packagePath = path.resolve(
             config.command.path as string,
@@ -148,14 +149,14 @@ export class TaskController {
 
         try {
             await this.fileController.notExist(fullPath);
-        } catch (error){
+        } catch (error) {
             throw new Error(`Path ${packagePath} already exists`);
         }
     }
 
     protected async copyRootTemplate(
         config: IConfig
-    ): Promise<void>{
+    ): Promise<void> {
         const from = path.resolve(config.alpenPath, 'templates/root/files');
         const to = path.resolve(
             config.workspacePath as string,
@@ -169,7 +170,7 @@ export class TaskController {
                 '/Users/fill/Documents/alpen/templates/root/files',
                 '/Users/fill/Documents/test-alpen/test'
             );
-        } catch (error){
+        } catch (error) {
             return Promise.reject(new Error(`Failed while coping template files > ${error.message}`));
         }
     }
@@ -177,12 +178,12 @@ export class TaskController {
     protected async installTemplate(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - use package manager to install template as dev dep.
         await this.executeShellScript(
             'installTemplate',
             config.workspace.packageManager,
-            ['install'],
+            ['install', '--save-dev'],
             config.workspacePath as string,
             outputStore
         );
@@ -197,25 +198,44 @@ export class TaskController {
     protected async populatePlaceholders(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // replace placeholders
         let dirPath = '';
-        if (config.command.type === CommandType.INIT){
+        if (config.command.type === CommandType.INIT) {
             dirPath = path.resolve(config.workspacePath as string, config.command.path as string);
         }
-        if (config.command.type === CommandType.ADD){
+        if (config.command.type === CommandType.ADD) {
             const packagePath = config.command.path ? config.command.path : config.workspace.rootDir;
             dirPath = path.resolve(config.workspacePath as string, packagePath, config.command.packages[0]);
         }
-        // TODO: do for all placeholders
-        await this.fileController.replace(dirPath, '{{ROOT_DIR}}', config.workspace.rootDir);
+
+        await this.fileController.replace(dirPath, Placeholder.ROOT_DIR, config.workspace.rootDir);
+        await this.fileController.replace(dirPath, Placeholder.VERSION, config.workspacePackage.version);
+        await this.fileController.replace(dirPath, Placeholder.AUTHOR, config.workspacePackage.author);
+        await this.fileController.replace(
+            dirPath,
+            Placeholder.REPOSITORY_TYPE,
+            config.workspacePackage.repository.type
+        );
+        await this.fileController.replace(dirPath, Placeholder.REPOSITORY_URL, config.workspacePackage.repository.url);
+        await this.fileController.replace(dirPath, Placeholder.NAME, config.command.packages[0]);
+        await this.fileController.replace(dirPath, Placeholder.PATH, config.command.path);
+        await this.fileController.replace(dirPath, Placeholder.ALPEN_VERSION, config.alpenVersion);
+        await this.fileController.replace(dirPath, Placeholder.PACKAGE_MANAGER, config.workspace.packageManager);
+        await this.fileController.replace(
+            dirPath,
+            Placeholder.NODE_VERSION_RESTRICTION,
+            config.workspacePackage.engines.node
+        );
+        await this.fileController.replace(dirPath, Placeholder.LICENCE, config.workspacePackage.license);
+        await this.fileController.replace(dirPath, Placeholder.PRIVATE, config.workspacePackage.private);
     }
 
-    protected async updateWorskpaceConfigForAdd(
+    protected async updateWorkspaceConfigForAdd(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
-        // - keep hash of alpen.package.json
+    ): Promise<any> {
+        // - keep hash of package.json
         // - keep package name, dir and if publishable
         // TODO: implement
     }
@@ -223,7 +243,7 @@ export class TaskController {
     protected async resolveAddDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - get package dependencies and compare with existing (warn if conflict)
         // - get package dev dependencies and compare with existing (warn if conflict)
         // TODO: implement
@@ -232,7 +252,7 @@ export class TaskController {
     protected async installDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // install dependencies
         await this.executeShellScript(
             'installDependencies',
@@ -246,7 +266,7 @@ export class TaskController {
     protected async resolveRemoveDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - get package dependencies and compare with existing (remove one that are not used by other)
         // - get package dev dependencies and compare with existing (remove one that are not used by
         // other)
@@ -256,7 +276,7 @@ export class TaskController {
     protected async uninstallObsolateDependencies(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - uninstall removable packages
         // TODO: implement
     }
@@ -264,7 +284,7 @@ export class TaskController {
     protected async removePackageFiles(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - remove files
         // TODO: implement
     }
@@ -272,7 +292,7 @@ export class TaskController {
     protected async updateWorskpaceConfigForRemove(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - remove entry from config
         // TODO: implement
     }
@@ -280,7 +300,7 @@ export class TaskController {
     protected async setupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - copy package config file to package.json
         // TODO: implement
     }
@@ -288,7 +308,7 @@ export class TaskController {
     protected async executePackageScript(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - execute script with npm
         // - execute script with npm
         // TODO: implement
@@ -297,14 +317,14 @@ export class TaskController {
     protected async cleanupPackageForPublish(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // TODO: implement
     }
 
     protected async getPackageConfig(
         config: IConfig,
         outputStore: { [commandName: string]: any }
-    ): Promise<any>{
+    ): Promise<any> {
         // - if package have definition proceed
         // - if package have definition proceed
         // TODO: implement

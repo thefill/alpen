@@ -92,10 +92,11 @@ export class FileController {
         return await this.findClosestHandler(pathToCheck);
     }
 
-    public async replace(dirPath: string, pattern: string, replacement: string) {
+    public async replace(dirPath: string, pattern: string, replacement: string | number | boolean) {
+        replacement = typeof replacement === 'string' ? replacement : replacement.toString();
         const replaceProcessor = async (filePath) => {
             let content: Buffer | string = await this.read(filePath);
-            content = content.toString().replace(pattern, replacement);
+            content = content.toString().replace(pattern, replacement as string);
             await this.write(filePath, content);
         };
 
