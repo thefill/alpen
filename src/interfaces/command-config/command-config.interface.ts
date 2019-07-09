@@ -4,7 +4,7 @@ import {ExecutionMode} from '../../enums/execution-mode';
 export interface ICommandConfig {
     type: CommandType;
     currentDir: string;
-    command?: undefined;
+    command?: string;
     mode: ExecutionMode;
     noPrompts: boolean;
     packages: string[];

@@ -1,6 +1,4 @@
-import {ListrTask} from 'listr';
 import * as path from 'path';
-import {Placeholder} from '../../enums/placeholder';
 import {IConfig} from '../../interfaces';
 import {ConfigController} from '../config-controller';
 import {FileController} from '../file-controller';
@@ -8,9 +6,10 @@ import {TaskController} from '../task-controller';
 
 // TODO: create config service
 // TODO: on class create get repository for inputs
-// TODO: cli repository for inputs
-// TODO: repository for inputs from code
+// TODO: cli repository for inputs from stdin and repository for inputs from code
 // TODO: create own question and task models translated by repos
+// TODO: allow templates to supply question:placeholder pairs to introduce custom replacements
+// TODO: move from listr to https://github.com/cronvel/terminal-kit
 
 export class Alpen {
     protected configController: ConfigController;
@@ -38,11 +37,6 @@ export class Alpen {
             return;
         }
 
-        // tslint:disable-next-line
-        console.log(config);
-        // tslint:disable-next-line
-        console.log('-------');
-
         if (!config.command.approved) {
             // tslint:disable-next-line
             console.warn(`Command aborted by user`);
@@ -52,12 +46,16 @@ export class Alpen {
 
         // create & execute tasks
         try {
-            const tasks: ListrTask[] = this.taskController.getTasks(config);
-            await this.taskController.processTasks(tasks);
+            await this.taskController.processTasks(config);
         } catch (error) {
             // tslint:disable-next-line
             console.error(`Execution failed > ${error.message}`);
             process.exit(1);
+        }
+
+        if (this.taskController.dependencyConflict) {
+            // TODO: prompt questions to resolve package conflict
+            // TODO: trigger taskcontroller again to confinue execution
         }
     }
 

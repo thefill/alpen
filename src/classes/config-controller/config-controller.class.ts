@@ -1,7 +1,8 @@
 import {Command} from 'commander';
 import * as inquirer from 'inquirer';
 import {Inquirer, Question, Questions} from 'inquirer';
-import * as path from 'path';
+import * as Path from 'path';
+import {SMV} from 'smv';
 import {CommandType} from '../../enums/command-type';
 import {ExecutionMode} from '../../enums/execution-mode';
 import {PackageManager} from '../../enums/package-manager';
@@ -11,6 +12,7 @@ import {FileController} from '../file-controller';
 export class ConfigController {
     // TODO: introduce config repositories
     protected fileController: FileController;
+    protected versionController: SMV;
     protected argsHandler: Command;
     protected questionHandler: Inquirer;
     protected config: IConfig = {
@@ -25,6 +27,7 @@ export class ConfigController {
         },
         alpenVersion: '',
         alpenPath: '',
+        nodeVersion: process.version,
         workspace: {
             packageManager: PackageManager.NPM,
             rootDir: 'packages',
@@ -50,6 +53,7 @@ export class ConfigController {
         this.fileController = fileController;
         this.argsHandler = new Command();
         this.questionHandler = inquirer;
+        this.versionController = new SMV();
     }
 
     public async getConfig(args: any, version: string, alpenPath: string): Promise<IConfig> {
@@ -77,6 +81,10 @@ export class ConfigController {
             } catch (error) {
                 throw new Error(`No package manager config > ${error.message}`);
             }
+
+            // get minimum node version from all configs
+            const versionDigest = this.versionController.minVersion(this.config.workspacePackage.engines.node);
+            this.config.nodeVersion = versionDigest ? versionDigest.version : this.config.nodeVersion;
         }
 
         // if no default values, ask for missing questions
@@ -92,7 +100,7 @@ export class ConfigController {
         }
 
         if (this.config.command.type === CommandType.INIT) {
-            this.config.workspacePath = path.resolve(
+            this.config.workspacePath = Path.resolve(
                 process.cwd(),
                 this.config.command.path as string,
                 this.config.command.workspace as string
@@ -321,7 +329,7 @@ export class ConfigController {
     protected async getPackageManagerConfig(workspaceConfigPath: string): Promise<IPackageConfig> {
         let packageManagerConfig: IPackageConfig | Buffer;
         try {
-            const packageManagerConfigPath = path.join(workspaceConfigPath, 'package.json');
+            const packageManagerConfigPath = Path.join(workspaceConfigPath, 'package.json');
             await this.fileController.access(packageManagerConfigPath);
             packageManagerConfig = await this.fileController.read(packageManagerConfigPath);
             packageManagerConfig = JSON.parse(packageManagerConfig.toString()) as IPackageConfig;

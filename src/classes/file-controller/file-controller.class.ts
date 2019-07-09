@@ -15,12 +15,14 @@ export class FileController {
     protected findClosestHandler: (...args: any) => Promise<string | undefined>;
     protected hashHandler: md5File;
     protected mkdirHandler: (path: PathLike, options?: number | string | MakeDirectoryOptions) => Promise<void>;
+    protected removeHandler: (path: PathLike) => Promise<void>;
 
     constructor() {
         this.statsHandler = promisify(fs.stat);
         this.accessHandler = promisify(fs.access);
         this.writeHandler = promisify(fs.writeFile);
         this.readHandler = promisify(fs.readFile);
+        this.removeHandler = promisify(fs.unlink);
         this.copyHandler = promisify(ncp);
         this.hashHandler = md5File;
         this.findClosestHandler = findUp.default;
@@ -51,6 +53,14 @@ export class FileController {
             throw new Error(`Write failed > ${error.message}`);
         }
         return this.writeHandler(filePath, data, 'utf8');
+    }
+
+    public async removeFile(filePath: PathLike): Promise<void> {
+        try {
+            await this.removeFile(filePath);
+        } catch (error) {
+            throw new Error(`File removal failed > ${error.message}`);
+        }
     }
 
     public async read(filePath: PathLike): Promise<Buffer> {
@@ -93,6 +103,7 @@ export class FileController {
     }
 
     public async replace(dirPath: string, pattern: string, replacement: string | number | boolean) {
+        console.log('replace for', replacement);
         replacement = typeof replacement === 'string' ? replacement : replacement.toString();
         const replaceProcessor = async (filePath) => {
             let content: Buffer | string = await this.read(filePath);

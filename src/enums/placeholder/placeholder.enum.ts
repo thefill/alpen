@@ -11,6 +11,7 @@ export enum Placeholder {
     ALPEN_VERSION = '{{alpen-version}}',
     ROOT_DIR = '{{root-dir}}',
     PACKAGE_MANAGER = '{{package-manager}}',
+    NODE_VERSION = '{{node-version}}',
     NODE_VERSION_RESTRICTION = '{{node-version-restriction}}',
     LICENCE = '{{license}}',
     PRIVATE = '{{private}}'

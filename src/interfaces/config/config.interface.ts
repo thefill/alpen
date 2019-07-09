@@ -6,6 +6,7 @@ export interface IConfig {
     workspacePath?: string;
     alpenPath: string;
     alpenVersion: string;
+    nodeVersion: string;
     command: ICommandConfig;
     workspace: IWorkspaceConfig;
     workspacePackage: IPackageConfig;
