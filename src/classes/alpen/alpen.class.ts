@@ -10,6 +10,10 @@ import {TaskController} from '../task-controller';
 // TODO: create own question and task models translated by repos
 // TODO: allow templates to supply question:placeholder pairs to introduce custom replacements
 // TODO: move from listr to https://github.com/cronvel/terminal-kit
+// for animations: https://github.com/sindresorhus/log-update
+// add update notifier https://github.com/yeoman/update-notifier
+// add insight https://github.com/yeoman/insight
+// https://github.com/sindresorhus/figures
 
 export class Alpen {
     protected configController: ConfigController;
